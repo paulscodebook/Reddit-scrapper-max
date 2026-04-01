@@ -1,6 +1,5 @@
 import { Actor } from 'apify';
-import { log, sleep } from 'crawlee';
-import axios from 'axios';
+import { log, sleep, gotScraping } from 'crawlee';
 import OpenAI from 'openai';
 
 // --- Types ---
@@ -85,19 +84,23 @@ function getTimeFilter(tw: InputSchema['timeWindow']): string {
 }
 
 // --- Reddit API Fetching ---
-async function fetchRedditUrl(url: string, retries = 3): Promise<any> {
+async function fetchRedditUrl(url: string, proxyUrl?: string, retries = 3): Promise<any> {
     for (let i = 0; i < retries; i++) {
         try {
-            const res = await axios.get(url, {
-                headers: {
-                    'User-Agent': 'ApifyActor/1.0 (RedditScraperMax)'
-                },
-                timeout: 10000
+            const res = await gotScraping({
+                url,
+                proxyUrl,
+                responseType: 'json',
+                headerGeneratorOptions: {
+                    browsers: [{ name: 'chrome' }, { name: 'firefox' }],
+                    devices: ['desktop'],
+                    os: ['windows', 'macos']
+                }
             });
-            return res.data;
+            return res.body;
         } catch (error: any) {
-            if (error.response?.status === 429) {
-                log.warning('Rate limited by Reddit. Sleeping for 10 seconds...');
+            if (error.response?.statusCode === 429 || error.response?.statusCode === 403) {
+                log.warning(`Rate limited or forbidden (${error.response.statusCode}). Sleeping for 10 seconds...`);
                 await delay(10000);
             } else {
                 log.error(`Request failed: ${url} - ${error.message}`);
@@ -110,7 +113,8 @@ async function fetchRedditUrl(url: string, retries = 3): Promise<any> {
 
 async function fetchPosts(
     subreddit: string,
-    input: InputSchema
+    input: InputSchema,
+    proxyUrl?: string
 ): Promise<NormalizedPost[]> {
     let posts: NormalizedPost[] = [];
     let after = null;
@@ -129,7 +133,7 @@ async function fetchPosts(
         const url = `${urlBase}${after ? `&after=${after}` : ''}`;
         log.info(`Fetching posts from r/${subreddit}...`);
         
-        const data = await fetchRedditUrl(url);
+        const data = await fetchRedditUrl(url, proxyUrl);
         const children = data?.data?.children;
         if (!children || children.length === 0) break;
 
@@ -169,12 +173,12 @@ async function fetchPosts(
     return posts;
 }
 
-async function fetchComments(post: NormalizedPost, input: InputSchema) {
+async function fetchComments(post: NormalizedPost, input: InputSchema, proxyUrl?: string) {
     const url = `${post.permalink}.json?limit=50&depth=2`;
     log.info(`Fetching comments for post ${post.id}`);
     
     try {
-        const data = await fetchRedditUrl(url);
+        const data = await fetchRedditUrl(url, proxyUrl);
         const commentsData = data[1]?.data?.children || [];
         
         for (const child of commentsData) {
@@ -306,14 +310,17 @@ Actor.main(async () => {
         if (doRag) ragDataset = await Actor.openDataset('rag');
     }
 
+    const proxyConfiguration = await Actor.createProxyConfiguration();
+    const proxyUrl = proxyConfiguration ? await proxyConfiguration.newUrl() : undefined;
+
     for (const sub of input.subreddits) {
         const cleanSub = sub.replace(/^r\//, '');
-        const posts = await fetchPosts(cleanSub, input);
+        const posts = await fetchPosts(cleanSub, input, proxyUrl);
         log.info(`Fetched ${posts.length} posts from r/${cleanSub}.`);
 
         for (const post of posts) {
             if (input.includeComments) {
-                await fetchComments(post, input);
+                await fetchComments(post, input, proxyUrl);
             }
 
             // 1. Raw Data Push
