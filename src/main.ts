@@ -90,25 +90,38 @@ async function fetchRedditUrl(url: string, proxyUrl?: string, retries = 3): Prom
             const res = await gotScraping({
                 url,
                 proxyUrl,
-                responseType: 'json',
+                responseType: 'text', // Read as text first to handle HTML fallback safely
                 headerGeneratorOptions: {
                     browsers: [{ name: 'chrome' }, { name: 'firefox' }],
                     devices: ['desktop'],
                     os: ['windows', 'macos']
                 }
             });
-            return res.body;
-        } catch (error: any) {
-            if (error.response?.statusCode === 429 || error.response?.statusCode === 403) {
-                log.warning(`Rate limited or forbidden (${error.response.statusCode}). Sleeping for 10 seconds...`);
+
+            if (res.statusCode === 429 || res.statusCode === 403) {
+                log.warning(`Rate limited or forbidden (${res.statusCode}). Sleeping for 10 seconds...`);
                 await delay(10000);
-            } else {
-                log.error(`Request failed: ${url} - ${error.message}`);
-                if (i === retries - 1) throw error;
-                await delay(2000 * (i + 1));
+                continue;
             }
+
+            if (res.statusCode !== 200) {
+                throw new Error(`Unexpected status code: ${res.statusCode}`);
+            }
+
+            try {
+                return JSON.parse(res.body);
+            } catch (err) {
+                log.warning(`Received non-JSON response from Reddit (starts with: ${res.body.slice(0, 50)}). Retrying...`);
+                await delay(3000);
+                continue;
+            }
+        } catch (error: any) {
+            log.error(`Request failed: ${url} - ${error.message}`);
+            if (i === retries - 1) throw error;
+            await delay(2000 * (i + 1));
         }
     }
+    throw new Error(`Failed to fetch ${url} after ${retries} retries.`);
 }
 
 async function fetchPosts(
