@@ -16,6 +16,7 @@ interface InputSchema {
     openAiApiKey: string;
     language: string;
     dryRun: boolean;
+    proxyConfiguration?: any;
 }
 
 interface NormalizedPost {
@@ -323,7 +324,7 @@ Actor.main(async () => {
         if (doRag) ragDataset = await Actor.openDataset('rag');
     }
 
-    const proxyConfiguration = await Actor.createProxyConfiguration();
+    const proxyConfiguration = await Actor.createProxyConfiguration(input.proxyConfiguration);
     const proxyUrl = proxyConfiguration ? await proxyConfiguration.newUrl() : undefined;
 
     for (const sub of input.subreddits) {

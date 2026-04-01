@@ -89,6 +89,13 @@
       "description": "If true, only log what would be scraped; do not push any data.",
       "type": "boolean",
       "default": false
+    },
+    "proxyConfiguration": {
+      "title": "Proxy configuration",
+      "type": "object",
+      "description": "Select proxies to be used by your Actor (Residential recommended for Reddit).",
+      "prefill": { "useApifyProxy": true },
+      "editor": "proxy"
     }
   },
   "required": ["subreddits"]
