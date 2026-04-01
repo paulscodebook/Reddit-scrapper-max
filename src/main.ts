@@ -138,9 +138,9 @@ async function fetchPosts(
 
     if (input.keywords && input.keywords.length > 0) {
         const query = encodeURIComponent(input.keywords.join(' OR '));
-        urlBase = `https://www.reddit.com/r/${subreddit}/search.json?q=${query}&restrict_sr=1&sort=top&t=${t}&limit=100`;
+        urlBase = `https://old.reddit.com/r/${subreddit}/search.json?q=${query}&restrict_sr=1&sort=top&t=${t}&limit=100`;
     } else {
-        urlBase = `https://www.reddit.com/r/${subreddit}/top.json?t=${t}&limit=100`;
+        urlBase = `https://old.reddit.com/r/${subreddit}/top.json?t=${t}&limit=100`;
     }
 
     while (posts.length < input.maxItems) {
@@ -188,7 +188,7 @@ async function fetchPosts(
 }
 
 async function fetchComments(post: NormalizedPost, input: InputSchema, proxyUrl?: string) {
-    const url = `${post.permalink}.json?limit=50&depth=2`;
+    const url = `${post.permalink.replace('www.reddit.com', 'old.reddit.com')}.json?limit=50&depth=2`;
     log.info(`Fetching comments for post ${post.id}`);
     
     try {
