@@ -1,0 +1,99 @@
+{
+  "title": "Reddit Scraper Max – AI insights & RAG-ready export",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "modes": {
+      "title": "Modes",
+      "description": "What this run should produce. You can combine modes.",
+      "type": "array",
+      "editor": "json",
+      "items": {
+        "type": "string",
+        "enum": ["pain_point_radar", "lead_gen", "rag_export"]
+      },
+      "default": ["pain_point_radar", "rag_export"]
+    },
+    "subreddits": {
+      "title": "Subreddits",
+      "description": "Subreddits to monitor (without r/ prefix, e.g. 'SaaS', 'Entrepreneur').",
+      "type": "array",
+      "editor": "stringList",
+      "default": ["SaaS", "Entrepreneur", "startups"]
+    },
+    "keywords": {
+      "title": "Keywords or phrases",
+      "description": "Optional keywords to filter posts/comments (e.g. 'CRM', 'email marketing'). Leave empty to take all.",
+      "type": "array",
+      "editor": "stringList",
+      "default": []
+    },
+    "intentPhrases": {
+      "title": "Lead-gen intent phrases",
+      "description": "Phrases that signal buying or tool-seeking intent, used mainly in lead_gen mode.",
+      "type": "array",
+      "editor": "stringList",
+      "default": [
+        "looking for a tool",
+        "any recommendations",
+        "alternative to",
+        "what do you use for",
+        "best tool for"
+      ]
+    },
+    "timeWindow": {
+      "title": "Time window",
+      "description": "How far back in time to search.",
+      "type": "string",
+      "enum": ["last_24h", "last_7d", "last_30d", "all_available"],
+      "enumTitles": ["Last 24 hours", "Last 7 days", "Last 30 days", "All available within API limits"],
+      "default": "last_7d"
+    },
+    "maxItems": {
+      "title": "Max items",
+      "description": "Maximum number of posts to process per run (comments are extra).",
+      "type": "integer",
+      "default": 200,
+      "minimum": 1
+    },
+    "includeComments": {
+      "title": "Include comments",
+      "description": "If true, fetch top-level comments for each post (and optionally some depth).",
+      "type": "boolean",
+      "default": true
+    },
+    "minScore": {
+      "title": "Minimum score",
+      "description": "Only include posts with upvotes >= this score (0 means no filter).",
+      "type": "integer",
+      "default": 0
+    },
+    "aiAnalysis": {
+      "title": "Enable AI analysis",
+      "description": "If enabled, will run LLM-based analysis for pain_point_radar and lead_gen modes.",
+      "type": "boolean",
+      "default": true
+    },
+    "openAiApiKey": {
+      "title": "OpenAI API key (optional)",
+      "description": "Optional. If provided, use OpenAI chat completions for analysis. If empty, fall back to lightweight heuristics.",
+      "type": "string",
+      "editor": "textfield",
+      "default": ""
+    },
+    "language": {
+      "title": "Language filter",
+      "description": "ISO language code (e.g. 'en'). If set, ignore posts that do not appear to be in this language.",
+      "type": "string",
+      "editor": "textfield",
+      "default": "en"
+    },
+    "dryRun": {
+      "title": "Dry run",
+      "description": "If true, only log what would be scraped; do not push any data.",
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": ["subreddits"]
+}

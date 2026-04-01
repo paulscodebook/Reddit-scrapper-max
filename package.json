@@ -1,0 +1,23 @@
+{
+  "name": "reddit-scraper-max",
+  "version": "1.0.0",
+  "description": "Reddit Scraper Max – AI-powered Reddit insights and RAG-ready data pipeline",
+  "main": "dist/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "npm run build && node dist/main.js",
+    "build": "tsc",
+    "dev": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "apify": "^3.2.0",
+    "crawlee": "^3.7.0",
+    "axios": "^1.6.0",
+    "openai": "^4.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
